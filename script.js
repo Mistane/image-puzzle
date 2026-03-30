@@ -125,7 +125,8 @@ img.addEventListener("load", (e) => {
     check = true;
     console.log("Too few pieces");
     // totalPieces = Math.floor(minPiece / totalPieces) * totalPieces;
-    ratio = `${Math.min(w + 4, Math.ceil(newWidth / 10))}:${Math.min(h + 4, Math.ceil(newHeight / 10))}`;
+    // ratio = `${Math.min(w + 4, Math.ceil(newWidth / 10))}:${Math.min(h + 4, Math.ceil(newHeight / 10))}`;
+    ratio = `${w * 4}:${h * 4}`;
     console.log(`new ratio : `, ratio);
     // totalPieces = totalPieces * 4;
     totalPieces = parseInt(ratio.split(":")[0]) * parseInt(ratio.split(":")[1]);
@@ -151,10 +152,10 @@ img.addEventListener("load", (e) => {
       let tmp = document.createElement("div");
       let tmpImg = document.createElement("img");
 
-      // tmp.style.width = `${pieceWidth}px`;
-      // tmp.style.height = `${pieceWidth}px`;
-      tmp.style.width = `${pieceSize}px`;
-      tmp.style.height = `${pieceSize}px`;
+      tmp.style.width = `${pieceWidth}px`;
+      tmp.style.height = `${pieceWidth}px`;
+      // tmp.style.width = `${pieceSize}px`;
+      // tmp.style.height = `${pieceSize}px`;
 
       tmp.style.overflow = "hidden";
       tmp.style.position = "relative";
@@ -164,11 +165,11 @@ img.addEventListener("load", (e) => {
       tmpImg.style.position = "absolute";
       tmpImg.style.objectFit = "cover";
 
-      // tmpImg.style.top = `${i * -1 * pieceWidth}px`;
-      // tmpImg.style.left = `${j * -1 * pieceWidth}px`;
+      tmpImg.style.top = `${i * -1 * pieceWidth}px`;
+      tmpImg.style.left = `${j * -1 * pieceWidth}px`;
 
-      tmpImg.style.top = `${i * -1 * pieceSize}px`;
-      tmpImg.style.left = `${j * -1 * pieceSize}px`;
+      // tmpImg.style.top = `${i * -1 * pieceSize}px`;
+      // tmpImg.style.left = `${j * -1 * pieceSize}px`;
 
       tmpImg.src = src;
       tmpImg.draggable = false;
