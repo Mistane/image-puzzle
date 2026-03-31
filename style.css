@@ -7,11 +7,37 @@
 }
 
 .puzzle-grid {
-  max-width: 90vw;
+  max-width: 95vw;
   max-height: 80vh;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 auto;
+}
+
+.puzzle {
+  position: relative;
 }
 
 .preview-image {
+  /* max-width: 90vw;
+  max-height: 90vh; */
+  width: 200px;
+  height: auto;
+  position: absolute;
+}
+
+.placeholder {
+  /* display: none; */
   max-width: 90vw;
   max-height: 90vh;
+}
+
+.piece{
+  overflow: hidden;
+  position: relative;
+}
+
+.piece-img{
+  position: absolute;
+
 }

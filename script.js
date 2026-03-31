@@ -71,6 +71,23 @@ function nearestNormalAspectRatio(width, height, side) {
   return match;
 }
 
+function shuffle(array) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+}
+
 function ratioThingy(ratio) {
   let w = parseInt(ratio.split(":")[0]);
   let h = parseInt(ratio.split(":")[1]);
@@ -81,23 +98,30 @@ let src = "";
 let container = document.querySelector("#image-puzzle");
 if (container) {
   let previewContainer = document.querySelector(".preview-image");
+  let placeholder = document.querySelector(".placeholder");
   console.log("hello");
   container.addEventListener("change", (e) => {
     let tmpContainer = document.querySelector(".tmp-container");
+    placeholder.style.display = "block";
+    let grid = document.querySelector(".puzzle-grid");
     let imageFile = e.target.files[0];
     src = URL.createObjectURL(imageFile);
+
     previewContainer.src = src;
+    placeholder.src = src;
     console.log(imageFile);
-    tmpContainer.innerHTML = "";
+    grid.innerHTML = "";
   });
 }
 
-const getAspectRatio = (w, h) => (w > h ? w / h : h / w);
 let img = document.querySelector(".preview-image");
 img.addEventListener("load", (e) => {
   console.log("load");
-  let width = img.clientWidth;
-  let height = img.clientHeight;
+
+  let placeholder = document.querySelector(".placeholder");
+  let width = placeholder.clientWidth;
+  let height = placeholder.clientHeight;
+  placeholder.style.display = "none";
 
   console.log(src);
   console.log(`dimension is ${width}x${height}`);
@@ -105,17 +129,13 @@ img.addEventListener("load", (e) => {
 
   let {ratio, newWidth, newHeight} = calcDimensions(width, height);
   let tmpContainer = document.querySelector(".tmp-container");
-  tmpContainer.style.width = `${newWidth}px`;
+  let grid = document.querySelector(".puzzle-grid");
+  // tmpContainer.style.width = `${newWidth}px`;
+  grid.style.width = `${newWidth}px`;
   console.log(`ratio is ${ratio}`);
   console.log(`new dimension is ${newWidth}x${newHeight}`);
   let newArea = newWidth * newHeight;
 
-  //create new img
-  let newImgContainer = document.querySelector(".new-image");
-  newImgContainer.src = src;
-  newImgContainer.style.width = `${newWidth}px`;
-  newImgContainer.style.height = `${newHeight}px`;
-  //---------------------------
   let {w, h} = ratioThingy(ratio);
   let totalPieces = w * h;
   console.log(totalPieces);
@@ -124,60 +144,150 @@ img.addEventListener("load", (e) => {
   if (totalPieces < minPiece) {
     check = true;
     console.log("Too few pieces");
-    // totalPieces = Math.floor(minPiece / totalPieces) * totalPieces;
-    // ratio = `${Math.min(w + 4, Math.ceil(newWidth / 10))}:${Math.min(h + 4, Math.ceil(newHeight / 10))}`;
+
     ratio = `${w * 4}:${h * 4}`;
     console.log(`new ratio : `, ratio);
-    // totalPieces = totalPieces * 4;
+
     totalPieces = parseInt(ratio.split(":")[0]) * parseInt(ratio.split(":")[1]);
     console.log("total piece moi : ", totalPieces);
   }
   let pieceArea = newArea / totalPieces;
   console.log(`piece area : ${pieceArea}`);
   let {w: nw, h: nh} = ratioThingy(ratio);
-  // let pieceSize = Math.max(
-  //   Math.max((newWidth / nw, newHeight / nh), Math.sqrt(pieceArea)),
-  // );
-  let pieceSize = Math.max(newWidth / nw, newHeight / nh);
-  let pieceWidth = Math.sqrt(pieceArea);
+  let pieceSize = Math.sqrt(pieceArea);
   if (check) {
-    tmpContainer.style.width = `${Math.ceil(parseInt(ratio.split(":")[0]) * pieceWidth)}px`;
-    // tmpContainer.style.width = `${parseInt(ratio.split(":")[0]) * pieceSize}px`;
+    grid.style.width = `${Math.ceil(parseInt(ratio.split(":")[0]) * pieceSize)}px`;
   }
 
-  console.log(pieceWidth, "x", pieceWidth);
+  console.log(pieceSize, "x", pieceSize);
 
+  let pieces = [];
   for (let i = 0; i < nh; i++) {
     for (let j = 0; j < nw; j++) {
-      let tmp = document.createElement("div");
-      let tmpImg = document.createElement("img");
+      let pieceObject = {
+        correctX: i,
+        correctY: j,
+        currentX: 0,
+        currentY: 0,
+        pieceSize: pieceSize,
+        imageWidth: newWidth,
+        imageHeight: newHeight,
+      };
 
-      tmp.style.width = `${pieceWidth}px`;
-      tmp.style.height = `${pieceWidth}px`;
-      // tmp.style.width = `${pieceSize}px`;
-      // tmp.style.height = `${pieceSize}px`;
-
-      tmp.style.overflow = "hidden";
-      tmp.style.position = "relative";
-
-      tmpImg.style.width = `${newWidth}px`;
-      tmpImg.style.height = `${newHeight}px`;
-      tmpImg.style.position = "absolute";
-      tmpImg.style.objectFit = "cover";
-
-      tmpImg.style.top = `${i * -1 * pieceWidth}px`;
-      tmpImg.style.left = `${j * -1 * pieceWidth}px`;
-
-      // tmpImg.style.top = `${i * -1 * pieceSize}px`;
-      // tmpImg.style.left = `${j * -1 * pieceSize}px`;
-
-      tmpImg.src = src;
-      tmpImg.draggable = false;
-
-      tmp.append(tmpImg);
-      // tmp.style.backgroundImage = src;
-      // tmp.style.backgroundPosition = `${i * -1 * pieceWidth}px ${j * -1 * pieceWidth}`;
-      tmpContainer.append(tmp);
+      pieces.push(pieceObject);
     }
   }
+  //shuffle array
+  shuffle(pieces);
+  pieces.forEach((piece) => {
+    let {
+      correctX,
+      correctY,
+      currentX,
+      currentY,
+      pieceSize,
+      imageWidth,
+      imageHeight,
+    } = piece;
+
+    let tmp = document.createElement("div");
+    let tmpImg = document.createElement("img");
+    tmp.classList.add("piece");
+    tmp.setAttribute("correctX", correctX);
+    tmp.setAttribute("correctY", correctY);
+    tmp.setAttribute("pieceSize", pieceSize);
+    tmpImg.classList.add("piece-img");
+
+    tmp.style.width = `${pieceSize}px`;
+    tmp.style.height = `${pieceSize}px`;
+
+    tmpImg.style.width = `${imageWidth}px`;
+    tmpImg.style.height = `${imageHeight}px`;
+    tmpImg.style.top = `${correctX * -1 * pieceSize}px`;
+    tmpImg.style.left = `${correctY * -1 * pieceSize}px`;
+    tmpImg.src = src;
+    tmpImg.draggable = false;
+
+    tmp.append(tmpImg);
+    grid.append(tmp);
+  });
+
+  //-----------------------dragging feature----------------------
+  let puzzlePieces = document.querySelectorAll(".piece");
+  let gridContainer = document.querySelector(".puzzle-grid");
+  let gridRect = gridContainer.getBoundingClientRect();
+  console.log(gridRect.top, gridRect.left);
+  // document.addEventListener("mousemove", (e) => {
+  //   puzzlePieces.forEach((piece) => {
+  //     piece.addEventListener("mousedown", (e) => {
+  //       let top = e.clientY;
+  //       let left = e.clientX;
+  //       console.log(top, "-", left);
+  //       console.log("wassup");
+  //       console.log(piece.getAttribute("correctX"));
+  //       console.log(piece.getAttribute("correctY"));
+  //       let pieceSize = piece.getAttribute("pieceSize");
+  //       let rect = piece.getBoundingClientRect();
+  //       console.log(rect.top, "-", rect.left);
+  //       piece.style.top = top + "px";
+  //       piece.style.left = left + "px";
+  //     });
+  //   });
+  // });
+  let current = null;
+
+  puzzlePieces.forEach((piece) => {
+    piece.addEventListener("mousedown", (e) => {
+      current = piece;
+      const rect = piece.getBoundingClientRect();
+      piece.offsetX = e.clientX - rect.left;
+      piece.offsetY = e.clientY - rect.top;
+
+      piece.style.zIndex = "100";
+    });
+    // piece.addEventListener("mousemove", (e) => {
+    //   if (
+    //     !piece.getAttribute("isDrag") ||
+    //     piece.getAttribute("isDrag") == false
+    //   )
+    //     return;
+    //   piece.setAttribute("isDrag", true);
+    //   let pieceSize = piece.getAttribute("pieceSize");
+    //   let rect = piece.getBoundingClientRect();
+    //   let viewTop = e.clientY;
+    //   let viewLeft = e.clientX;
+    //   console.log("ok");
+    //   console.log(viewTop, viewLeft);
+
+    //   // minus pieceSize / 2 for the cursor to be in the piece itself
+    //   piece.style.top = viewTop - gridRect.top - pieceSize / 2 + "px";
+    //   piece.style.left = viewLeft - gridRect.left - pieceSize / 2 + "px";
+    //   // console.log(piece.getAttribute("correctX"));
+    //   // console.log(piece.getAttribute("correctY"));
+    // });
+    // piece.addEventListener("mouseup", (e) => {
+    //   console.log("STOP");
+    //   piece.setAttribute("isDrag", false);
+    // });
+  });
+  document.addEventListener("mousemove", (e) => {
+    if (!current) return;
+    let viewTop = e.clientY;
+    let viewLeft = e.clientX;
+    current.style.left = viewTop - gridRect.top - pieceSize / 2 + "px";
+    current.style.top = viewLeft - gridRect.left - pieceSize / 2 + "px";
+    // current.style.left = e.clientX - gridRect.left - current.offsetX + "px";
+    // current.style.top = e.clientY - gridRect.top - current.offsetY + "px";
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!current) return;
+
+    current.style.zIndex = "1";
+    current = null;
+  });
 });
+
+// document.addEventListener("mousemove", (e) => {
+//   console.log(e.clientX, "-", e.clientY);
+// });
