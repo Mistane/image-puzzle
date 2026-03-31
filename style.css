@@ -32,12 +32,11 @@
   max-height: 90vh;
 }
 
-.piece{
+.piece {
   overflow: hidden;
   position: relative;
 }
 
-.piece-img{
+.piece-img {
   position: absolute;
-
 }

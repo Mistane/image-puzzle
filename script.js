@@ -217,31 +217,16 @@ img.addEventListener("load", (e) => {
   let gridContainer = document.querySelector(".puzzle-grid");
   let gridRect = gridContainer.getBoundingClientRect();
   console.log(gridRect.top, gridRect.left);
-  // document.addEventListener("mousemove", (e) => {
-  //   puzzlePieces.forEach((piece) => {
-  //     piece.addEventListener("mousedown", (e) => {
-  //       let top = e.clientY;
-  //       let left = e.clientX;
-  //       console.log(top, "-", left);
-  //       console.log("wassup");
-  //       console.log(piece.getAttribute("correctX"));
-  //       console.log(piece.getAttribute("correctY"));
-  //       let pieceSize = piece.getAttribute("pieceSize");
-  //       let rect = piece.getBoundingClientRect();
-  //       console.log(rect.top, "-", rect.left);
-  //       piece.style.top = top + "px";
-  //       piece.style.left = left + "px";
-  //     });
-  //   });
-  // });
   let current = null;
 
   puzzlePieces.forEach((piece) => {
     piece.addEventListener("mousedown", (e) => {
       current = piece;
       const rect = piece.getBoundingClientRect();
-      piece.offsetX = e.clientX - rect.left;
-      piece.offsetY = e.clientY - rect.top;
+      console.log("hello");
+      console.log(rect.top, rect.left);
+      piece.offsetLeft = 0;
+      piece.offsetTop = 0;
 
       piece.style.zIndex = "100";
     });
@@ -269,22 +254,26 @@ img.addEventListener("load", (e) => {
     //   console.log("STOP");
     //   piece.setAttribute("isDrag", false);
     // });
-  });
-  document.addEventListener("mousemove", (e) => {
-    if (!current) return;
-    let viewTop = e.clientY;
-    let viewLeft = e.clientX;
-    current.style.left = viewTop - gridRect.top - pieceSize / 2 + "px";
-    current.style.top = viewLeft - gridRect.left - pieceSize / 2 + "px";
-    // current.style.left = e.clientX - gridRect.left - current.offsetX + "px";
-    // current.style.top = e.clientY - gridRect.top - current.offsetY + "px";
-  });
+    document.addEventListener("mousemove", (e) => {
+      if (!current) return;
+      let viewTop = e.clientY;
+      let viewLeft = e.clientX;
+      let top = viewTop - gridRect.top - pieceSize / 2 + "px";
+      let left = viewLeft - gridRect.left - pieceSize / 2 + "px";
+      console.log(top, left);
 
-  document.addEventListener("mouseup", () => {
-    if (!current) return;
+      current.style.top = top;
+      current.style.left = left;
+      // current.style.left = e.clientX - gridRect.left - current.offsetX + "px";
+      // current.style.top = e.clientY - gridRect.top - current.offsetY + "px";
+    });
 
-    current.style.zIndex = "1";
-    current = null;
+    document.addEventListener("mouseup", () => {
+      if (!current) return;
+
+      current.style.zIndex = "1";
+      current = null;
+    });
   });
 });
 
