@@ -179,11 +179,17 @@ img.addEventListener("load", (e) => {
   shuffle(pieces);
   pieces.forEach((piece, index) => {
     let {correctX, correctY, pieceSize, imageWidth, imageHeight} = piece;
-
-    let currentX = Math.floor(index / w);
-    let currentY = index % w;
+    console.log("index la ", index);
+    console.log("nw la : ", nw);
+    let currentX = Math.floor(index / nw);
+    let currentY = index % nw;
+    console.log(`current x : ${currentX} current y : ${currentY}`);
 
     let tmp = document.createElement("div");
+    //the odd is low but not zero ;)
+    if (currentX == correctX && currentY == correctY)
+      tmp.classList.add("correct");
+
     tmp.classList.add("piece");
     tmp.setAttribute("correctX", correctX);
     tmp.setAttribute("correctY", correctY);
@@ -193,10 +199,12 @@ img.addEventListener("load", (e) => {
 
     tmp.style.width = `${pieceSize}px`;
     tmp.style.height = `${pieceSize}px`;
+    tmp.style.left = currentY * pieceSize + "px";
+    tmp.style.top = currentX * pieceSize + "px";
+
     tmp.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
     tmp.style.backgroundImage = `url(${src})`;
 
-    // tmp.style.backgroundSize = "auto";
     tmp.style.backgroundPosition = `${correctY * -1 * pieceSize}px ${correctX * -1 * pieceSize}px`;
 
     grid.append(tmp);
@@ -206,67 +214,128 @@ img.addEventListener("load", (e) => {
   let puzzlePieces = document.querySelectorAll(".piece");
   let gridContainer = document.querySelector(".puzzle-grid");
   let gridRect = gridContainer.getBoundingClientRect();
-  console.log(gridRect.top, gridRect.left);
-  let current = null;
+  console.log("hello", gridRect.top, gridRect.left);
 
+  let currentPiece = null;
+  let dragOverPiece = null;
   puzzlePieces.forEach((piece) => {
+    let gridX = -1;
+    let gridY = -1;
     piece.addEventListener("mousedown", (e) => {
-      current = piece;
-      const rect = piece.getBoundingClientRect();
-      console.log("hello");
-      console.log(rect.top, rect.left);
-      piece.offsetLeft = 0;
-      piece.offsetTop = 0;
-
+      if (piece.classList.contains("correct")) return;
+      currentPiece = piece;
+      // console.log(current);
       piece.style.zIndex = "100";
     });
-    // piece.addEventListener("mousemove", (e) => {
-    //   if (
-    //     !piece.getAttribute("isDrag") ||
-    //     piece.getAttribute("isDrag") == false
-    //   )
-    //     return;
-    //   piece.setAttribute("isDrag", true);
-    //   let pieceSize = piece.getAttribute("pieceSize");
-    //   let rect = piece.getBoundingClientRect();
-    //   let viewTop = e.clientY;
-    //   let viewLeft = e.clientX;
-    //   console.log("ok");
-    //   console.log(viewTop, viewLeft);
 
-    //   // minus pieceSize / 2 for the cursor to be in the piece itself
-    //   piece.style.top = viewTop - gridRect.top - pieceSize / 2 + "px";
-    //   piece.style.left = viewLeft - gridRect.left - pieceSize / 2 + "px";
-    //   // console.log(piece.getAttribute("correctX"));
-    //   // console.log(piece.getAttribute("correctY"));
-    // });
-    // piece.addEventListener("mouseup", (e) => {
-    //   console.log("STOP");
-    //   piece.setAttribute("isDrag", false);
-    // });
     document.addEventListener("mousemove", (e) => {
-      if (!current) return;
+      if (!currentPiece) return;
       let viewTop = e.clientY;
       let viewLeft = e.clientX;
-      let top = viewTop - gridRect.top - pieceSize / 2 + "px";
-      let left = viewLeft - gridRect.left - pieceSize / 2 + "px";
-      console.log(top, left);
 
-      current.style.top = top;
-      current.style.left = left;
-      // current.style.left = e.clientX - gridRect.left - current.offsetX + "px";
-      // current.style.top = e.clientY - gridRect.top - current.offsetY + "px";
+      const elements = document.elementsFromPoint(viewLeft, viewTop);
+      // elements will return [0] current piece dragging, [1] the element under the cursor, [2] the html page lmao
+      if (
+        elements.length > 2 &&
+        elements[1].classList.contains("piece") &&
+        !elements[1].classList.contains("correct")
+      ) {
+        // console.log("element la ", elements[1]);
+        dragOverPiece = elements[1];
+        document
+          .querySelectorAll(".piece")
+          .forEach((p) => p.classList.remove("hover"));
+        dragOverPiece.classList.add("hover");
+      } else dragOverPiece = null;
+
+      //drag piece along pointer
+      let pieceSize = parseInt(currentPiece.getAttribute("piecesize"));
+      let top = viewTop - gridRect.top - pieceSize / 2;
+      let left = viewLeft - gridRect.left - pieceSize / 2;
+
+      //snapping feature
+      // let gridX = Math.abs(top / pieceSize);
+      // let gridY = Math.abs(left / pieceSize);
+      // // console.log(gridX, gridY);
+      // if (
+      //   gridX - Math.floor(gridX) < 0.7 &&
+      //   gridY - Math.floor(gridY) < 0.7 &&
+      //   dragOverPiece
+      // ) {
+      //   console.log("OK Tha duoc roi");
+      // }
+      // console.log(`Grid coord : ${top / pieceSize} ${left / pieceSize}`);
+      // console.log(top, left);
+
+      currentPiece.style.top = top + "px";
+      currentPiece.style.left = left + "px";
     });
 
-    document.addEventListener("mouseup", () => {
-      if (!current) return;
+    document.addEventListener("mouseup", (e) => {
+      if (!currentPiece) return;
+      if (dragOverPiece) {
+        dragOverPiece.classList.remove("hover");
+        let pieceSize = currentPiece.getAttribute("piecesize");
+        let newX = dragOverPiece.getAttribute("currentx");
+        let newY = dragOverPiece.getAttribute("currenty");
+        let oldX = currentPiece.getAttribute("currentx");
+        let oldY = currentPiece.getAttribute("currenty");
 
-      current.style.zIndex = "1";
-      current = null;
+        //check if correct for current piece
+        let oldCorrectX = currentPiece.getAttribute("correctx");
+        let oldCorrectY = currentPiece.getAttribute("correcty");
+        if (oldCorrectX == newX && oldCorrectY == newY) {
+          currentPiece.classList.add("correct");
+        }
+
+        //check if correct for drag over piece
+        let newCorrectX = dragOverPiece.getAttribute("correctx");
+        let newCorrectY = dragOverPiece.getAttribute("correcty");
+        if (newCorrectX == oldX && newCorrectY == oldY) {
+          dragOverPiece.classList.add("correct");
+        }
+
+        //swap value
+        currentPiece.setAttribute("currentX", newX);
+        currentPiece.setAttribute("currentY", newY);
+
+        dragOverPiece.setAttribute("currentX", oldX);
+        dragOverPiece.setAttribute("currentY", oldY);
+
+        //swap position
+        //apparently the swap value looks reversed but its actually correct???
+        currentPiece.style.top = newX * pieceSize + "px";
+        currentPiece.style.left = newY * pieceSize + "px";
+
+        dragOverPiece.style.top = oldX * pieceSize + "px";
+        dragOverPiece.style.left = oldY * pieceSize + "px";
+
+        console.log("old coord", oldX, oldY);
+        console.log("new coord", newX, newY);
+      } else {
+        let pieceSize = currentPiece.getAttribute("piecesize");
+        let oldX = currentPiece.getAttribute("currentx");
+        let oldY = currentPiece.getAttribute("currenty");
+        currentPiece.style.top = oldX * pieceSize + "px";
+        currentPiece.style.left = oldY * pieceSize + "px";
+      }
+      currentPiece.style.zIndex = "1";
+      currentPiece = null;
     });
   });
 });
 
-// document.addEventListener("mousemove", (e) => {
-//   console.log(e.clientX, "-", e.clientY);
-// });
+//finish puzzle
+const checkBtn = document.querySelector(".check-btn");
+if (checkBtn) {
+  checkBtn.addEventListener("click", (e) => {
+    let pieces = document.querySelectorAll(".piece");
+    let arr = [...pieces];
+    let check = arr.every((p) => p.classList.contains("correct"));
+    if (check) {
+      alert("GG YOU WIN");
+    } else {
+      alert("KEEP TRYING NOOB");
+    }
+  });
+}

@@ -12,6 +12,7 @@
   display: flex;
   flex-wrap: wrap;
   margin: 0 auto;
+  position: relative;
 }
 
 .puzzle {
@@ -34,9 +35,42 @@
 
 .piece {
   overflow: hidden;
-  position: relative;
+  position: absolute;
 }
 
 .piece-img {
   position: absolute;
+}
+
+.hover {
+  opacity: 0.5;
+}
+
+@keyframes snapPop {
+  0% {
+    transform: scale(1.2);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.piece.correct {
+  animation: snapPop 0.25s ease;
+}
+
+.check-btn {
+  margin-top: 500px;
+  padding: 20px 10px;
+  width: 100px;
+  height: 20px;
+  background-color: green;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
 }
