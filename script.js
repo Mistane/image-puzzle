@@ -167,8 +167,6 @@ img.addEventListener("load", (e) => {
       let pieceObject = {
         correctX: i,
         correctY: j,
-        currentX: 0,
-        currentY: 0,
         pieceSize: pieceSize,
         imageWidth: newWidth,
         imageHeight: newHeight,
@@ -179,36 +177,28 @@ img.addEventListener("load", (e) => {
   }
   //shuffle array
   shuffle(pieces);
-  pieces.forEach((piece) => {
-    let {
-      correctX,
-      correctY,
-      currentX,
-      currentY,
-      pieceSize,
-      imageWidth,
-      imageHeight,
-    } = piece;
+  pieces.forEach((piece, index) => {
+    let {correctX, correctY, pieceSize, imageWidth, imageHeight} = piece;
+
+    let currentX = Math.floor(index / w);
+    let currentY = index % w;
 
     let tmp = document.createElement("div");
-    let tmpImg = document.createElement("img");
     tmp.classList.add("piece");
     tmp.setAttribute("correctX", correctX);
     tmp.setAttribute("correctY", correctY);
     tmp.setAttribute("pieceSize", pieceSize);
-    tmpImg.classList.add("piece-img");
+    tmp.setAttribute("currentX", currentX);
+    tmp.setAttribute("currentY", currentY);
 
     tmp.style.width = `${pieceSize}px`;
     tmp.style.height = `${pieceSize}px`;
+    tmp.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
+    tmp.style.backgroundImage = `url(${src})`;
 
-    tmpImg.style.width = `${imageWidth}px`;
-    tmpImg.style.height = `${imageHeight}px`;
-    tmpImg.style.top = `${correctX * -1 * pieceSize}px`;
-    tmpImg.style.left = `${correctY * -1 * pieceSize}px`;
-    tmpImg.src = src;
-    tmpImg.draggable = false;
+    // tmp.style.backgroundSize = "auto";
+    tmp.style.backgroundPosition = `${correctY * -1 * pieceSize}px ${correctX * -1 * pieceSize}px`;
 
-    tmp.append(tmpImg);
     grid.append(tmp);
   });
 
