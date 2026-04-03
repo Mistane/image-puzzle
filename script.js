@@ -1,16 +1,24 @@
-function calcDimensions(width, height) {
+let syntaxAttr = {
+  currentRowAttr: "current_row",
+  currentColumnAttr: "current_column",
+  correctRowAttr: "correct_row",
+  currentColumnAttr: "current_column",
+  gridSelector: ".puzzle-grid",
+  pieceSizeAttr: "piece_size",
+};
+
+function getAdjustedDimensions(width, height) {
   let newAspectRatio = nearestNormalAspectRatio(width, height, 1);
-
+  let {w, h} = newAspectRatio;
   // Calc new dimensions
-  let ratioVals = newAspectRatio.split(":");
 
-  let roundedWidth = Math.round(width / ratioVals[0]),
-    newWidthVal = Math.round(roundedWidth * ratioVals[0]),
-    newHeightVal = Math.round(roundedWidth * ratioVals[1]);
+  let roundedWidth = Math.round(width / w),
+    newWidthVal = Math.round(roundedWidth * w),
+    newHeightVal = Math.round(roundedWidth * h);
   return {
     ratio: newAspectRatio,
-    newWidth: newWidthVal,
-    newHeight: newHeightVal,
+    adjustedWidth: newWidthVal,
+    adjustedHeight: newHeightVal,
   };
 }
 
@@ -68,7 +76,9 @@ function nearestNormalAspectRatio(width, height, side) {
     }
   }
 
-  return match;
+  let w = parseInt(match.split(":")[0]),
+    h = parseInt(match.split(":")[1]);
+  return {w, h};
 }
 
 function shuffle(array) {
@@ -88,20 +98,230 @@ function shuffle(array) {
   }
 }
 
-function ratioThingy(ratio) {
-  let w = parseInt(ratio.split(":")[0]);
-  let h = parseInt(ratio.split(":")[1]);
-  return {w, h};
+function checkCorrectPosition(piece) {
+  let {currentRowAttr, currentColumnAttr, correctRowAttr, correctColumnAttr} =
+    syntaxAttr;
+  let currentRow = piece.getAttribute(currentRowAttr);
+  let currentColumn = piece.getAttribute(currentColumnAttr);
+  let correctRow = piece.getAttribute(correctRowAttr);
+  let correctColumn = piece.getAttribute(correctColumnAttr);
+
+  return currentRow == correctRow && currentColumn == correctColumn;
 }
 
-let src = "";
-let container = document.querySelector("#image-puzzle");
-if (container) {
+function calcTotalPieces(width, height, ratio) {
+  let minPieces = 30;
+  let totalPieces = width * height;
+  let check = false;
+  if (totalPieces < minPieces) {
+    ratio = {
+      w: width * 4,
+      h: height * 4,
+    };
+    totalPieces = width * 4 * (height * 4);
+  }
+
+  return {
+    check,
+    totalPieces,
+  };
+}
+
+function dragFeature(pieceSelector, gridSelector, correctIndicatorClass) {
+  let puzzlePieces = document.querySelectorAll(pieceSelector);
+  let gridContainer = document.querySelector(gridSelector);
+  let gridRect = gridContainer.getBoundingClientRect();
+
+  //drag
+  let currentPiece = null;
+  let dragOverPiece = null;
+  puzzlePieces.forEach((piece) => {
+    piece.addEventListener("mousedown", (e) => {
+      if (piece.classList.contains(correctIndicatorClass)) return;
+      currentPiece = piece;
+      piece.style.zIndex = "100";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!currentPiece) return;
+      let viewTop = e.clientY;
+      let viewLeft = e.clientX;
+      const elements = document.elementsFromPoint(viewLeft, viewTop);
+      // elements will return [0] current piece dragging, [1] the element under the cursor, [2] the html page lmao
+      if (
+        elements.length > 2 &&
+        elements[1].classList.contains("piece") &&
+        !elements[1].classList.contains(correctIndicatorClass)
+      ) {
+        dragOverPiece = elements[1];
+        tmp = dragOverPiece;
+        document
+          .querySelectorAll(".piece")
+          .forEach((p) => p.classList.remove("hover"));
+        dragOverPiece.classList.add("hover");
+      } else {
+        // dragOverPiece.classList.remove("hover");
+        dragOverPiece = null;
+      }
+
+      //drag piece along pointer
+      let pieceSize = parseInt(
+        currentPiece.getAttribute(syntaxAttr.pieceSizeAttr),
+      );
+      let top = viewTop - gridRect.top - pieceSize / 2;
+      let left = viewLeft - gridRect.left - pieceSize / 2;
+
+      currentPiece.style.top = top + "px";
+      currentPiece.style.left = left + "px";
+    });
+
+    document.addEventListener("mouseup", (e) => {
+      if (!currentPiece) return;
+      let {currentRowAttr, currentColumnAttr, pieceSizeAttr} = syntaxAttr;
+      if (dragOverPiece) {
+        dragOverPiece.classList.remove("hover");
+
+        let pieceSize = currentPiece.getAttribute(pieceSizeAttr);
+        let currentRow = currentPiece.getAttribute(currentRowAttr);
+        let currentColumn = currentPiece.getAttribute(currentColumnAttr);
+        let newRow = dragOverPiece.getAttribute(currentRowAttr);
+        let newColumn = dragOverPiece.getAttribute(currentColumnAttr);
+
+        //swap value
+        currentPiece.setAttribute(currentRowAttr, newRow);
+        currentPiece.setAttribute(currentColumnAttr, newColumn);
+
+        dragOverPiece.setAttribute(currentRowAttr, currentRow);
+        dragOverPiece.setAttribute(currentColumnAttr, currentColumn);
+
+        if (checkCorrectPosition(currentPiece)) {
+          currentPiece.classList.add(correctIndicatorClass);
+        }
+
+        if (checkCorrectPosition(dragOverPiece)) {
+          dragOverPiece.classList.add(correctIndicatorClass);
+        }
+        //swap position
+        currentPiece.style.top = newRow * pieceSize + "px";
+        currentPiece.style.left = newColumn * pieceSize + "px";
+
+        dragOverPiece.style.top = currentRow * pieceSize + "px";
+        dragOverPiece.style.left = currentColumn * pieceSize + "px";
+      } else {
+        //No drag over piece then return to original position
+        let pieceSize = currentPiece.getAttribute(pieceSizeAttr);
+        let currentRow = currentPiece.getAttribute(currentRowAttr);
+        let currentColumn = currentPiece.getAttribute(currentColumnAttr);
+        currentPiece.style.top = currentRow * pieceSize + "px";
+        currentPiece.style.left = currentColumn * pieceSize + "px";
+        document
+          .querySelectorAll(".piece")
+          .forEach((piece) => piece.classList.remove("hover"));
+      }
+      currentPiece.style.zIndex = "1";
+      currentPiece = null;
+    });
+  });
+}
+
+function renderPuzzle(placeholderSelector, gridSelector, cb) {
+  let placeholder = document.querySelector(placeholderSelector);
+  placeholder.addEventListener("load", (e) => {
+    let width = placeholder.clientWidth;
+    let height = placeholder.clientHeight;
+    let src = placeholder.src;
+    let grid = document.querySelector(gridSelector);
+    placeholder.style.display = "none";
+
+    console.log(`dimension is ${width}x${height}`);
+
+    //get info
+    let {ratio, adjustedWidth, adjustedHeight} = getAdjustedDimensions(
+      width,
+      height,
+    );
+    console.log("RATIO IS", ratio);
+
+    grid.style.width = adjustedWidth + "px";
+
+    console.log(`new dimension is ${adjustedWidth}x${adjustedHeight}`);
+    let newArea = adjustedWidth * adjustedHeight;
+
+    let {check, totalPieces} = calcTotalPieces(ratio.w, ratio.h, ratio);
+    console.log("NEW RATIO : ", ratio);
+
+    let pieceArea = newArea / totalPieces;
+    let pieceSize = Math.sqrt(pieceArea);
+    if (check) {
+      grid.style.width = ratio.w * pieceSize + "px";
+    }
+
+    console.log(pieceSize, "x", pieceSize);
+
+    let pieces = [];
+    for (let i = 0; i < ratio.h; i++) {
+      for (let j = 0; j < ratio.w; j++) {
+        let pieceObject = {
+          correct_row: i,
+          correct_column: j,
+          pieceSize: pieceSize,
+          imageWidth: adjustedWidth,
+          imageHeight: adjustedHeight,
+        };
+        pieces.push(pieceObject);
+      }
+    }
+    //shuffle array
+    shuffle(pieces);
+    pieces.forEach((pieceInfo, index) => {
+      let {correct_row, correct_column, pieceSize, imageWidth, imageHeight} =
+        pieceInfo;
+
+      let {
+        correctRowAttr,
+        correctColumnAttr,
+        currentRowAttr,
+        currentColumnAttr,
+        pieceSizeAttr,
+      } = syntaxAttr;
+      let {w, h} = ratio;
+      let current_row = Math.floor(index / w);
+      let current_column = index % w;
+      let piece = document.createElement("div");
+
+      piece.classList.add("piece");
+      piece.setAttribute(correctRowAttr, correct_row);
+      piece.setAttribute(correctColumnAttr, correct_column);
+      piece.setAttribute(currentRowAttr, current_row);
+      piece.setAttribute(currentColumnAttr, current_column);
+      piece.setAttribute(pieceSizeAttr, pieceSize);
+
+      piece.style.width = pieceSize + "px";
+      piece.style.height = pieceSize + "px";
+      piece.style.top = current_row * pieceSize + "px";
+      piece.style.left = current_column * pieceSize + "px";
+
+      piece.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
+      piece.style.backgroundImage = `url(${src})`;
+
+      piece.style.backgroundPosition = `${correct_column * -1 * pieceSize}px ${correct_row * -1 * pieceSize}px`;
+
+      //the odd is low but not zero ;)
+      if (checkCorrectPosition(piece)) piece.classList.add("correct");
+      grid.append(piece);
+    });
+
+    //after done rendering call callback for drag
+    cb(".piece", ".puzzle-grid", "correct");
+  });
+}
+
+let puzzleInput = document.querySelector(".image-puzzle-input");
+if (puzzleInput) {
   let previewContainer = document.querySelector(".preview-image");
   let placeholder = document.querySelector(".placeholder");
   console.log("hello");
-  container.addEventListener("change", (e) => {
-    let tmpContainer = document.querySelector(".tmp-container");
+  puzzleInput.addEventListener("change", (e) => {
     placeholder.style.display = "block";
     let grid = document.querySelector(".puzzle-grid");
     let imageFile = e.target.files[0];
@@ -113,217 +333,7 @@ if (container) {
     grid.innerHTML = "";
   });
 }
-
-let img = document.querySelector(".preview-image");
-img.addEventListener("load", (e) => {
-  console.log("load");
-
-  let placeholder = document.querySelector(".placeholder");
-  let width = placeholder.clientWidth;
-  let height = placeholder.clientHeight;
-  placeholder.style.display = "none";
-
-  console.log(src);
-  console.log(`dimension is ${width}x${height}`);
-  //get ratio
-
-  let {ratio, newWidth, newHeight} = calcDimensions(width, height);
-  let tmpContainer = document.querySelector(".tmp-container");
-  let grid = document.querySelector(".puzzle-grid");
-  // tmpContainer.style.width = `${newWidth}px`;
-  grid.style.width = `${newWidth}px`;
-  console.log(`ratio is ${ratio}`);
-  console.log(`new dimension is ${newWidth}x${newHeight}`);
-  let newArea = newWidth * newHeight;
-
-  let {w, h} = ratioThingy(ratio);
-  let totalPieces = w * h;
-  console.log(totalPieces);
-  let minPiece = 30;
-  let check = false;
-  if (totalPieces < minPiece) {
-    check = true;
-    console.log("Too few pieces");
-
-    ratio = `${w * 4}:${h * 4}`;
-    console.log(`new ratio : `, ratio);
-
-    totalPieces = parseInt(ratio.split(":")[0]) * parseInt(ratio.split(":")[1]);
-    console.log("total piece moi : ", totalPieces);
-  }
-  let pieceArea = newArea / totalPieces;
-  console.log(`piece area : ${pieceArea}`);
-  let {w: nw, h: nh} = ratioThingy(ratio);
-  let pieceSize = Math.sqrt(pieceArea);
-  if (check) {
-    grid.style.width = `${Math.ceil(parseInt(ratio.split(":")[0]) * pieceSize)}px`;
-  }
-
-  console.log(pieceSize, "x", pieceSize);
-
-  let pieces = [];
-  for (let i = 0; i < nh; i++) {
-    for (let j = 0; j < nw; j++) {
-      let pieceObject = {
-        correctX: i,
-        correctY: j,
-        pieceSize: pieceSize,
-        imageWidth: newWidth,
-        imageHeight: newHeight,
-      };
-
-      pieces.push(pieceObject);
-    }
-  }
-  //shuffle array
-  shuffle(pieces);
-  pieces.forEach((piece, index) => {
-    let {correctX, correctY, pieceSize, imageWidth, imageHeight} = piece;
-    console.log("index la ", index);
-    console.log("nw la : ", nw);
-    let currentX = Math.floor(index / nw);
-    let currentY = index % nw;
-    console.log(`current x : ${currentX} current y : ${currentY}`);
-
-    let tmp = document.createElement("div");
-    //the odd is low but not zero ;)
-    if (currentX == correctX && currentY == correctY)
-      tmp.classList.add("correct");
-
-    tmp.classList.add("piece");
-    tmp.setAttribute("correctX", correctX);
-    tmp.setAttribute("correctY", correctY);
-    tmp.setAttribute("pieceSize", pieceSize);
-    tmp.setAttribute("currentX", currentX);
-    tmp.setAttribute("currentY", currentY);
-
-    tmp.style.width = `${pieceSize}px`;
-    tmp.style.height = `${pieceSize}px`;
-    tmp.style.left = currentY * pieceSize + "px";
-    tmp.style.top = currentX * pieceSize + "px";
-
-    tmp.style.backgroundSize = `${imageWidth}px ${imageHeight}px`;
-    tmp.style.backgroundImage = `url(${src})`;
-
-    tmp.style.backgroundPosition = `${correctY * -1 * pieceSize}px ${correctX * -1 * pieceSize}px`;
-
-    grid.append(tmp);
-  });
-
-  //-----------------------dragging feature----------------------
-  let puzzlePieces = document.querySelectorAll(".piece");
-  let gridContainer = document.querySelector(".puzzle-grid");
-  let gridRect = gridContainer.getBoundingClientRect();
-  console.log("hello", gridRect.top, gridRect.left);
-
-  let currentPiece = null;
-  let dragOverPiece = null;
-  puzzlePieces.forEach((piece) => {
-    let gridX = -1;
-    let gridY = -1;
-    piece.addEventListener("mousedown", (e) => {
-      if (piece.classList.contains("correct")) return;
-      currentPiece = piece;
-      // console.log(current);
-      piece.style.zIndex = "100";
-    });
-
-    document.addEventListener("mousemove", (e) => {
-      if (!currentPiece) return;
-      let viewTop = e.clientY;
-      let viewLeft = e.clientX;
-
-      const elements = document.elementsFromPoint(viewLeft, viewTop);
-      // elements will return [0] current piece dragging, [1] the element under the cursor, [2] the html page lmao
-      if (
-        elements.length > 2 &&
-        elements[1].classList.contains("piece") &&
-        !elements[1].classList.contains("correct")
-      ) {
-        // console.log("element la ", elements[1]);
-        dragOverPiece = elements[1];
-        document
-          .querySelectorAll(".piece")
-          .forEach((p) => p.classList.remove("hover"));
-        dragOverPiece.classList.add("hover");
-      } else dragOverPiece = null;
-
-      //drag piece along pointer
-      let pieceSize = parseInt(currentPiece.getAttribute("piecesize"));
-      let top = viewTop - gridRect.top - pieceSize / 2;
-      let left = viewLeft - gridRect.left - pieceSize / 2;
-
-      //snapping feature
-      // let gridX = Math.abs(top / pieceSize);
-      // let gridY = Math.abs(left / pieceSize);
-      // // console.log(gridX, gridY);
-      // if (
-      //   gridX - Math.floor(gridX) < 0.7 &&
-      //   gridY - Math.floor(gridY) < 0.7 &&
-      //   dragOverPiece
-      // ) {
-      //   console.log("OK Tha duoc roi");
-      // }
-      // console.log(`Grid coord : ${top / pieceSize} ${left / pieceSize}`);
-      // console.log(top, left);
-
-      currentPiece.style.top = top + "px";
-      currentPiece.style.left = left + "px";
-    });
-
-    document.addEventListener("mouseup", (e) => {
-      if (!currentPiece) return;
-      if (dragOverPiece) {
-        dragOverPiece.classList.remove("hover");
-        let pieceSize = currentPiece.getAttribute("piecesize");
-        let newX = dragOverPiece.getAttribute("currentx");
-        let newY = dragOverPiece.getAttribute("currenty");
-        let oldX = currentPiece.getAttribute("currentx");
-        let oldY = currentPiece.getAttribute("currenty");
-
-        //check if correct for current piece
-        let oldCorrectX = currentPiece.getAttribute("correctx");
-        let oldCorrectY = currentPiece.getAttribute("correcty");
-        if (oldCorrectX == newX && oldCorrectY == newY) {
-          currentPiece.classList.add("correct");
-        }
-
-        //check if correct for drag over piece
-        let newCorrectX = dragOverPiece.getAttribute("correctx");
-        let newCorrectY = dragOverPiece.getAttribute("correcty");
-        if (newCorrectX == oldX && newCorrectY == oldY) {
-          dragOverPiece.classList.add("correct");
-        }
-
-        //swap value
-        currentPiece.setAttribute("currentX", newX);
-        currentPiece.setAttribute("currentY", newY);
-
-        dragOverPiece.setAttribute("currentX", oldX);
-        dragOverPiece.setAttribute("currentY", oldY);
-
-        //swap position
-        //apparently the swap value looks reversed but its actually correct???
-        currentPiece.style.top = newX * pieceSize + "px";
-        currentPiece.style.left = newY * pieceSize + "px";
-
-        dragOverPiece.style.top = oldX * pieceSize + "px";
-        dragOverPiece.style.left = oldY * pieceSize + "px";
-
-        console.log("old coord", oldX, oldY);
-        console.log("new coord", newX, newY);
-      } else {
-        let pieceSize = currentPiece.getAttribute("piecesize");
-        let oldX = currentPiece.getAttribute("currentx");
-        let oldY = currentPiece.getAttribute("currenty");
-        currentPiece.style.top = oldX * pieceSize + "px";
-        currentPiece.style.left = oldY * pieceSize + "px";
-      }
-      currentPiece.style.zIndex = "1";
-      currentPiece = null;
-    });
-  });
-});
+renderPuzzle(".placeholder", ".puzzle-grid", dragFeature);
 
 //finish puzzle
 const checkBtn = document.querySelector(".check-btn");
