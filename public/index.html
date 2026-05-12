@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Menu</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="main-menu">
+      <!-- Empty Title Bar -->
+      <header class="title-bar"></header>
+
+      <!-- Main Navigation Sections -->
+      <div class="menu-sections">
+        <button class="menu-card">
+          <span class="icon">🛠️</span>
+          <span class="label">Create a Level</span>
+        </button>
+        <button class="menu-card primary">
+          <span class="icon">▶</span>
+          <span class="label">Play</span>
+        </button>
+        <button class="menu-card">
+          <span class="icon">🌍</span>
+          <span class="label">Community Levels</span>
+        </button>
+      </div>
+
+      <!-- Account Section (Bottom Left) -->
+      <footer class="footer-controls">
+        <button class="account-btn" onclick="window.location.href='/account'">
+          <span>Account</span>
+        </button>
+      </footer>
+    </div>
+  </body>
+  <script src="./user/account.js"></script>
+</html>
