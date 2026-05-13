@@ -7,9 +7,10 @@ let syntaxAttr = {
   pieceSizeAttr: "piece_size",
 };
 
+
 function getAdjustedDimensions(width, height) {
   let newAspectRatio = nearestNormalAspectRatio(width, height, 1);
-  let {w, h} = newAspectRatio;
+  let { w, h } = newAspectRatio;
   // Calc new dimensions
 
   let roundedWidth = Math.round(width / w),
@@ -78,7 +79,7 @@ function nearestNormalAspectRatio(width, height, side) {
 
   let w = parseInt(match.split(":")[0]),
     h = parseInt(match.split(":")[1]);
-  return {w, h};
+  return { w, h };
 }
 
 function shuffle(array) {
@@ -99,7 +100,7 @@ function shuffle(array) {
 }
 
 function checkCorrectPosition(piece) {
-  let {currentRowAttr, currentColumnAttr, correctRowAttr, correctColumnAttr} =
+  let { currentRowAttr, currentColumnAttr, correctRowAttr, correctColumnAttr } =
     syntaxAttr;
   let currentRow = piece.getAttribute(currentRowAttr);
   let currentColumn = piece.getAttribute(currentColumnAttr);
@@ -177,7 +178,7 @@ function dragFeature(pieceSelector, gridSelector, correctIndicatorClass) {
 
     document.addEventListener("mouseup", (e) => {
       if (!currentPiece) return;
-      let {currentRowAttr, currentColumnAttr, pieceSizeAttr} = syntaxAttr;
+      let { currentRowAttr, currentColumnAttr, pieceSizeAttr } = syntaxAttr;
       if (dragOverPiece) {
         dragOverPiece.classList.remove("hover");
 
@@ -236,7 +237,7 @@ function renderPuzzle(placeholderSelector, gridSelector, cb) {
     console.log(`dimension is ${width}x${height}`);
 
     //get info
-    let {ratio, adjustedWidth, adjustedHeight} = getAdjustedDimensions(
+    let { ratio, adjustedWidth, adjustedHeight } = getAdjustedDimensions(
       width,
       height,
     );
@@ -247,7 +248,7 @@ function renderPuzzle(placeholderSelector, gridSelector, cb) {
     console.log(`new dimension is ${adjustedWidth}x${adjustedHeight}`);
     let newArea = adjustedWidth * adjustedHeight;
 
-    let {check, totalPieces} = calcTotalPieces(ratio.w, ratio.h, ratio);
+    let { check, totalPieces } = calcTotalPieces(ratio.w, ratio.h, ratio);
     console.log("NEW RATIO : ", ratio);
 
     let pieceArea = newArea / totalPieces;
@@ -274,7 +275,7 @@ function renderPuzzle(placeholderSelector, gridSelector, cb) {
     //shuffle array
     shuffle(pieces);
     pieces.forEach((pieceInfo, index) => {
-      let {correct_row, correct_column, pieceSize, imageWidth, imageHeight} =
+      let { correct_row, correct_column, pieceSize, imageWidth, imageHeight } =
         pieceInfo;
 
       let {
@@ -284,7 +285,7 @@ function renderPuzzle(placeholderSelector, gridSelector, cb) {
         currentColumnAttr,
         pieceSizeAttr,
       } = syntaxAttr;
-      let {w, h} = ratio;
+      let { w, h } = ratio;
       let current_row = Math.floor(index / w);
       let current_column = index % w;
       let piece = document.createElement("div");
